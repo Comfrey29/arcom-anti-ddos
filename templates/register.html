@@ -1,1 +1,53 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArCom Central — Registre</title>
+<style>
+body{font-family:Inter, sans-serif;background:#071228;color:#e6eef6;margin:0;padding:0;}
+header{padding:20px;background:#0b1220;text-align:center;}
+main{padding:20px;max-width:500px;margin:20px auto;background:#0b1220;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.5);}
+label{display:block;margin:12px 0 4px;}
+input, select{width:100%;padding:8px;border-radius:6px;border:none;margin-bottom:12px;}
+button{background:#0ea5a0;color:#042226;padding:10px 15px;border-radius:8px;border:none;font-weight:600;cursor:pointer;}
+a{color:#0ea5a0;text-decoration:none;display:block;margin-top:10px;}
+.flash{padding:10px;margin-bottom:12px;border-radius:6px;}
+.flash-success{background:#0ea5a0;color:#042226;}
+.flash-error{background:#dc2626;color:#fff;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Registre d'usuari ArCom Central</h1>
+  <p>Completa les dades per crear el teu compte.</p>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="/register">
+    <label for="username">Nom d'usuari</label>
+    <input type="text" id="username" name="username" required>
+
+    <label for="role">Tipus de compte</label>
+    <select id="role" name="role" required>
+      <option value="">-- Selecciona un rol --</option>
+      <option value="guest">Guest</option>
+      <option value="administrator">Administrator</option>
+      <option value="owner">Owner</option>
+    </select>
+
+    <button type="submit">Crear compte</button>
+  </form>
+
+  <a href="/">Tornar a Home</a>
+</main>
+</body>
+</html>
 
