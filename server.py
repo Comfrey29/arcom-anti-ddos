@@ -1,120 +1,123 @@
-import json
-import os
-from flask import Flask, request, jsonify
-from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+import json, os
 
 app = Flask(__name__)
+app.secret_key = "arcom-central-secret"  # Canviar per un secret segur
 
-# Fitxers de configuració i dades
-POLICY_FILE = "policy.json"
-LOG_FILE = "logs.json"
-STATE_FILE = "state.json"
+USERS_FILE = "users.json"
 
-# Càrrega de polítiques
-with open(POLICY_FILE, "r", encoding="utf-8") as f:
-    POLICY = json.load(f)
-
-# Inicialització de fitxers si no existeixen
-if not os.path.exists(LOG_FILE):
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
+# Inicialitza fitxer de usuaris
+if not os.path.exists(USERS_FILE):
+    with open(USERS_FILE, "w") as f:
         json.dump([], f)
 
-if not os.path.exists(STATE_FILE):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump({"blocked_servers": []}, f)
-
-
-def log_event(action, details):
-    """Afegeix un event al fitxer de logs"""
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        logs = json.load(f)
-
-    logs.append({
-        "timestamp": datetime.utcnow().isoformat(),
-        "action": action,
-        "details": details
-    })
-
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
-        json.dump(logs, f, indent=2)
-
-
-def load_state():
-    with open(STATE_FILE, "r", encoding="utf-8") as f:
+# Funcions auxiliars
+def load_users():
+    with open(USERS_FILE, "r") as f:
         return json.load(f)
 
+def save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=2)
 
-def save_state(state):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2)
+def save_user(user):
+    users = load_users()
+    users.append(user)
+    save_users(users)
 
+def get_user(username):
+    users = load_users()
+    for u in users:
+        if u["username"] == username:
+            return u
+    return None
 
+def mark_admin_inactive(username, reason="No compleix polítiques"):
+    users = load_users()
+    for u in users:
+        if u["username"] == username and u["role"] == "administrator":
+            u["active"] = False
+            u["expulsion_reason"] = reason
+            save_users(users)
+            return True
+    return False
+
+# Rutes principals
 @app.route("/")
 def index():
-    return jsonify({
-        "message": "ArCom Central API",
-        "endpoints": ["/logs", "/block", "/status"]
-    })
+    return render_template("index.html")
 
+@app.route("/policies")
+def policies():
+    return render_template("policies.html")
 
-@app.route("/logs")
-def get_logs():
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        logs = json.load(f)
-    return jsonify(logs)
+@app.route("/register", methods=["GET","POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        role = request.form.get("role")
+        if not username or not role:
+            flash("Tots els camps són obligatoris!", "error")
+            return redirect(url_for("register"))
+        # Evita duplicats
+        if get_user(username):
+            flash("Nom d'usuari ja existeix!", "error")
+            return redirect(url_for("register"))
+        # Guarda usuari
+        save_user({"username": username, "role": role, "active": True})
+        flash(f"Usuari {username} creat correctament!", "success")
+        return redirect(url_for("index"))
+    return render_template("register.html")
 
+@app.route("/interests")
+def interests():
+    return render_template("interests.html")
 
-@app.route("/status")
-def status():
-    state = load_state()
-    return jsonify(state)
+# Login simple per mostrar dashboard segons rol
+@app.route("/login", methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        user = get_user(username)
+        if user:
+            session["username"] = username
+            session["role"] = user["role"]
+            session["active"] = user.get("active", True)
+            flash(f"Benvingut {username}!", "success")
+            return redirect(url_for("dashboard"))
+        else:
+            flash("Usuari no trobat!", "error")
+            return redirect(url_for("login"))
+    return render_template("login.html")
 
+@app.route("/dashboard")
+def dashboard():
+    if "username" not in session:
+        flash("Has de fer login primer!", "error")
+        return redirect(url_for("login"))
+    username = session["username"]
+    role = session["role"]
+    active = session.get("active", True)
+    return render_template("dashboard.html", username=username, role=role, active=active)
 
-@app.route("/block", methods=["POST"])
-def block_server():
-    """
-    Endpoint per bloquejar un servidor ofensiu.
-    JSON input esperat:
-    {
-      "server_id": "srv123",
-      "requested_by": "admin",
-      "reason": "NSFW"
-    }
-    """
-    data = request.json
-    server_id = data.get("server_id")
-    user_role = data.get("requested_by")
-    reason = data.get("reason", "No reason provided")
+# Expulsió d'administradors (només Owner pot fer-ho)
+@app.route("/expel_admin/<username>")
+def expel_admin(username):
+    if session.get("role") != "owner":
+        flash("Només l'Owner pot expulsar administradors!", "error")
+        return redirect(url_for("dashboard"))
+    if mark_admin_inactive(username):
+        flash(f"Administrador {username} expulsat correctament!", "success")
+    else:
+        flash("Administrador no trobat o ja inactiu!", "error")
+    return redirect(url_for("dashboard"))
 
-    if not server_id or not user_role:
-        return jsonify({"error": "Falten camps obligatoris"}), 400
-
-    # Verificar si l'usuari té permís
-    role_policy = POLICY["roles"].get(user_role)
-    if not role_policy or not role_policy.get("can_request_disable", False):
-        return jsonify({"error": "No tens permisos per fer això"}), 403
-
-    # Carregar estat
-    state = load_state()
-    if server_id in state["blocked_servers"]:
-        return jsonify({"message": "El servidor ja està bloquejat"}), 200
-
-    # Bloquejar
-    state["blocked_servers"].append(server_id)
-    save_state(state)
-
-    log_event("BLOCK_SERVER", {
-        "server_id": server_id,
-        "requested_by": user_role,
-        "reason": reason
-    })
-
-    return jsonify({
-        "message": f"Servidor {server_id} bloquejat correctament",
-        "reason": reason
-    })
-
+# Logout
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Sessió tancada correctament!", "success")
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000, debug=True)
