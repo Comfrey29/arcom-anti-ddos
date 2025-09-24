@@ -1,1 +1,101 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArCom Central — Polítiques i Termes</title>
+<style>
+body{font-family:Inter, sans-serif;background:#071228;color:#e6eef6;margin:0;padding:0;}
+header{padding:20px;background:#0b1220;text-align:center;}
+main{padding:20px;max-width:900px;margin:20px auto;background:#0b1220;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.5);}
+h1,h2{color:#0ea5a0;}
+ul,ol{margin-left:18px;}
+pre{background:#071323;padding:12px;border-radius:8px;overflow:auto;color:#b9f5ef;}
+a.btn{display:inline-block;background:#0ea5a0;color:#042226;padding:10px 15px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:10px;}
+section{margin-bottom:18px;}
+.muted{color:#94a3b8;}
+</style>
+</head>
+<body>
+<header>
+  <h1>ArCom Central — Polítiques i Termes d'Ús</h1>
+  <p class="muted">Guia oficial d'ús, procediments d'incident i garanties legals.</p>
+</header>
+<main>
+  <section>
+    <h2>Finalitat del servei</h2>
+    <p class="muted">ArCom Central és una infraestructura col·laborativa per millorar la seguretat de servidors. No està autoritzat l'ús per a activitats il·legals.</p>
+  </section>
+  <section>
+    <h2>Tipus de comptes</h2>
+    <ul>
+      <li><strong>Administrator:</strong> gestiona bloqueigs i aprova sol·licituds.</li>
+      <li><strong>Guest:</strong> visualitza logs i envia reportis.</li>
+      <li><strong>Owner:</strong> vincula el client, apel·la bloquejos i pot revertir-los.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Continguts prohibits</h2>
+    <ul>
+      <li>NSFW i contingut sexual explícit</li>
+      <li>Gore o violència extrema</li>
+      <li>Eines d'atac cibernètic (DDoS, malware, exploits)</li>
+      <li>Spam massiu o interrupció de serveis</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Procediment d'acció</h2>
+    <ol>
+      <li>Report de l'usuari amb proves.</li>
+      <li>Revisió inicial per un admin.</li>
+      <li>Bloqueig temporal (24h) amb 1 admin.</li>
+      <li>Bloqueig permanent requereix K aprovacions d'administradors.</li>
+      <li>Generació de comanda signada enviada al client.</li>
+    </ol>
+  </section>
+  <section>
+    <h2>Drets d'apel·lació</h2>
+    <p class="muted">El propietari pot apel·lar dins de 72 hores. L'owner revisa i pot revertir bloqueig si és indegut.</p>
+  </section>
+  <section>
+    <h2>Evidències i registre</h2>
+    <ul>
+      <li>Logs i timestamps per a cada acció.</li>
+      <li>Proves incloses: captures, fragments de log, hash d'arxius.</li>
+      <li>Accés restringit segons rol.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Comandes i seguretat</h2>
+    <ul>
+      <li>Signatura HMAC-SHA256 del payload.</li>
+      <li>Nonce i expiració per evitar replay.</li>
+      <li>Accions locals no destructives (crear flag, aturar servei).</li>
+    </ul>
+    <pre>{
+  "cmd":"disable_client",
+  "client_id":"my-server-1",
+  "request_id":123,
+  "nonce":"c8f3a9b2...",
+  "issued_at":"2025-09-24T12:00:00Z",
+  "expires_at":"2025-09-24T12:10:00Z",
+  "reason":"hosting NSFW and launching attacks"
+}</pre>
+  </section>
+  <section>
+    <h2>Privacitat i compliment legal</h2>
+    <ul>
+      <li>Dades recollides estrictament necessàries per incidents.</li>
+      <li>Accés restringit i segur.</li>
+      <li>Col·laboració amb autoritats amb garanties legals.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Contacte legal</h2>
+    <p class="muted">Per consultes legals o apel·lacions: legal@arcom.example (placeholder)</p>
+  </section>
+  <a href="/" class="btn">Tornar a Home</a>
+</main>
+</body>
+</html>
 
