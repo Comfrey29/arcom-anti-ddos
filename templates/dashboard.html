@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArCom Central — Dashboard</title>
+<style>
+body{font-family:Inter, sans-serif;background:#071228;color:#e6eef6;margin:0;padding:0;}
+header{padding:20px;background:#0b1220;text-align:center;}
+main{padding:20px;max-width:800px;margin:20px auto;background:#0b1220;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.5);}
+h1,h2{color:#0ea5a0;}
+ul{margin-left:18px;}
+a.btn{display:inline-block;background:#0ea5a0;color:#042226;padding:10px 15px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:10px;margin-right:8px;}
+.flash{padding:10px;margin-bottom:12px;border-radius:6px;}
+.flash-success{background:#0ea5a0;color:#042226;}
+.flash-error{background:#dc2626;color:#fff;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Dashboard — {{ username }}</h1>
+  <p>Rol: {{ role }} | Estat: {% if active %}Actiu{% else %}Inactiu{% endif %}</p>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% if role == "owner" %}
+    <h2>Administració</h2>
+    <p>Pots expulsar administradors que no compleixin les polítiques:</p>
+    <ul>
+      {% for u in users %}
+        {% if u.role == "administrator" and u.active %}
+          <li>{{ u.username }} <a href="/expel_admin/{{ u.username }}" class="btn">Expulsar</a></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% elif role == "administrator" %}
+    <h2>Accions d'administrador</h2>
+    <p>Veure logs i reports pendents (mòdul pendent d’implementar)</p>
+  {% else %}
+    <h2>Guest Dashboard</h2>
+    <p>Pots visualitzar logs públics i enviar reportis.</p>
+  {% endif %}
+
+  <a href="/logout" class="btn">Tancar sessió</a>
+  <a href="/" class="btn">Tornar a Home</a>
+</main>
+</body>
+</html>
