@@ -1,0 +1,38 @@
+#!/usr/sbin/nft -f
+
+table inet arcom {
+  set blocked {
+    type ipv4_addr
+    flags timeout
+    timeout 1h
+  }
+
+  chain input {
+    type filter hook input priority 0; policy accept;
+
+    # Drop blocked IPs
+    ip saddr @blocked drop
+
+    # Allow loopback
+    iif "lo" accept
+
+    # Allow established
+    ct state established,related accept
+
+    # Limit new TCP connections (SYN) per source
+    tcp flags syn tcp option maxseg size 0 counter limit rate 25/second accept
+
+    # Example: limit SSH attempts (additional per-service rules should be added)
+    tcp dport 22 ct state new limit rate 3/minute accept
+
+    # ICMP rate-limit
+    ip protocol icmp limit rate 10/second accept
+    ip protocol icmp drop
+
+    # Default policy: accept HTTP/HTTPS but enforce at application layer
+    tcp dport {80,443} accept
+
+    # Drop everything else
+    counter drop
+  }
+}
